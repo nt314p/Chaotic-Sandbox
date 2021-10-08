@@ -10,7 +10,6 @@
     }
 
     private static string[] basicOperators = {"+","-","*","/","^"};
-    private static string[] multiCharacterOperators = {"sin", "cos", "tan", "abs"};
 
     public string TokenValue { get; }
     public Type TokenType { get; }
@@ -33,12 +32,7 @@
 
     public static bool IsMultiCharOperator(string token)
     {
-        for (var index = 0; index < multiCharacterOperators.Length; index++)
-        {
-            if (multiCharacterOperators[index] == token) return true;
-        }
-
-        return false;
+        return Operator.StringToOperation(token) != Operator.Operation.Undefined;
     }
 
     public override string ToString()

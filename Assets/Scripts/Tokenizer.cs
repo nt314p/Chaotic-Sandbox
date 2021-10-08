@@ -50,7 +50,7 @@ public class Tokenizer
             tokens.Add(token);
         }
 
-        if (previousTokenType == Token.Type.Operator)
+        if (previousTokenType == Token.Type.UnaryOperator || previousTokenType == Token.Type.BinaryOperator)
         {
             throw new InvalidExpressionException("Expression cannot end with operator");
         }
@@ -80,22 +80,27 @@ public class Tokenizer
         
         if (Token.IsBasicOperator(currentToken))
         {
-            if ((previousTokenType == Token.Type.Operator || previousTokenType == Token.Type.Undefined)
+            if ((previousTokenType == Token.Type.UnaryOperator || previousTokenType == Token.Type.BinaryOperator|| previousTokenType == Token.Type.Undefined)
                 && currentToken != "-")
             {
                 throw new InvalidExpressionException($"Unexpected operator '{currentToken}' at char {cursorIndex + 1}");
             }
 
             Operator.Operation operationType;
+            var tokenOperatorType = Token.Type.BinaryOperator;
             switch (currentToken)
             {
                 case "+":
                     operationType = Operator.Operation.Addition;
                     break;
                 case "-":
-                    operationType = previousTokenType == Token.Type.Operator || previousTokenType == Token.Type.Undefined
+                    operationType = previousTokenType == Token.Type.UnaryOperator 
+                                    || previousTokenType == Token.Type.BinaryOperator 
+                                    || previousTokenType == Token.Type.Undefined
+                                    || previousTokenType == Token.Type.Parenthesis
                         ? Operator.Operation.Negation
                         : Operator.Operation.Subtraction;
+                    if (operationType == Operator.Operation.Negation) tokenOperatorType = Token.Type.UnaryOperator;
                     break;
                 case "*":
                     operationType = Operator.Operation.Multiplication;
@@ -111,13 +116,31 @@ public class Tokenizer
             }
 
             cursorIndex++;
-            previousTokenType = Token.Type.Operator;
+            previousTokenType = tokenOperatorType;
 
             return new Operator(currentToken, operationType);
         }
 
-        var stringTokenType = StringTokenType.MultiCharacterOperator;
+        var multiCharacterToken = ParseMultiCharacterToken(ref currentToken);
+        if (multiCharacterToken != null)
+        {
+            //cursorIndex++;
+            return multiCharacterToken;
+        }
 
+        if (currentToken.Length == 0 || char.IsWhiteSpace(currentToken[0]))
+        {
+            cursorIndex++;
+            return null;
+        }
+
+        throw new InvalidExpressionException($"Unexpected symbol '{currentToken}' at char {cursorIndex + 1}");
+    }
+
+    private Token ParseMultiCharacterToken(ref string currentToken)
+    {
+        
+        var stringTokenType = StringTokenType.MultiCharacterOperator;
         var beginningIdentifierIndex = cursorIndex;
         
         while (cursorIndex < line.Length - 1)
@@ -177,16 +200,11 @@ public class Tokenizer
 
         if (stringTokenType == StringTokenType.MultiCharacterOperator)
         {
-            return new Operator(currentToken, Operator.Operation.Multi);
-        }
-
-        if (currentToken.Length == 0 || char.IsWhiteSpace(currentToken[0]))
-        {
             cursorIndex++;
-            return null;
+            return new Operator(currentToken, Operator.StringToOperation(currentToken));
         }
 
-        throw new InvalidExpressionException($"Unexpected symbol '{currentToken}' at char {cursorIndex + 1}");
+        return null;
     }
 
     private static bool IsNumerical(string token)

@@ -18,6 +18,7 @@ public class Operator : Token
         Ceiling,
         SquareRoot,
         CubeRoot,
+        Undefined
     }
 
     public Operation OperationType { get; }
@@ -40,6 +41,14 @@ public class Operator : Token
             case Operation.Exponentiation:
                 return 4;
             case Operation.Negation:
+            case Operation.Sine:
+            case Operation.Cosine:
+            case Operation.Tangent:
+            case Operation.Absolute:
+            case Operation.Floor:
+            case Operation.Ceiling:
+            case Operation.SquareRoot:
+            case Operation.CubeRoot:
                 return 3;
             default:
                 return -1;
@@ -65,7 +74,8 @@ public class Operator : Token
             case "cbrt": return Operation.CubeRoot;
         }
 
-        throw new ArgumentException($"{token} is not a valid operator");
+        //throw new ArgumentException($"{token} is not a valid operator");
+        return Operation.Undefined;
     }
 
     public static Type OperationDimension(Operation operation)
