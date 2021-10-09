@@ -9,10 +9,15 @@ public class ShaderDriver : MonoBehaviour
     [SerializeField] private Camera camera;
     [SerializeField] private ComputeShader computeShader;
     [SerializeField] private RenderTexture renderTexture;
+    [SerializeField] private float a;
+    [SerializeField] private float b;
+    [SerializeField] private float c;
+    [SerializeField] private float d;
 
     private ComputeBuffer positionsBuffer;
     private Vector2[] positions;
     [SerializeField] private Vector2Int dimensions;
+    private int numParticles = 51200;
 
     private int mainId;
     private int renderId;
@@ -22,6 +27,9 @@ public class ShaderDriver : MonoBehaviour
     // Start is called before the first frame update
     private void Awake()
     {
+        //dimensions = new Vector2Int(Screen.width, Screen.height);
+
+        Application.targetFrameRate = 60;
         mainId = computeShader.FindKernel("Main");
         renderId = computeShader.FindKernel("Render");
         clearTextureId = computeShader.FindKernel("ClearTexture");
@@ -33,28 +41,21 @@ public class ShaderDriver : MonoBehaviour
         computeShader.SetTexture(renderId, "renderTexture", renderTexture);
         computeShader.SetTexture(clearTextureId, "renderTexture", renderTexture);
         computeShader.SetTexture(fadeTextureId, "renderTexture", renderTexture);
-
-        positions = new Vector2[10240];
         
-        for (var i = 0; i < positions.Length; i++)
-        {
-            var randX = Random.Range(-3f, 3f);
-            var randY = Random.Range(-3f, 3f);
-            positions[i] = new Vector2(randX, randY);
-        }
-
-        positionsBuffer = new ComputeBuffer(positions.Length, sizeof(float) * 2);
-        positionsBuffer.SetData(positions);
-        computeShader.SetBuffer(mainId, "positions", positionsBuffer);
-        computeShader.SetBuffer(renderId, "positions", positionsBuffer);
+        positionsBuffer = new ComputeBuffer(numParticles, sizeof(float) * 2);
+        
+        ResetSim();
 
         computeShader.SetVector("offset", new Vector2(renderTexture.width / 2f, renderTexture.height / 2f));
     }
 
     private void Update()
     {
+        computeShader.SetVector("p", new Vector4(a, b, c, d));
         computeShader.Dispatch(mainId, positions.Length / 128, 1, 1);
 
+        if (Input.GetKeyDown(KeyCode.R)) ResetSim();
+        
         if (Input.GetKeyDown(KeyCode.Space))
         {
             var texture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
@@ -68,6 +69,24 @@ public class ShaderDriver : MonoBehaviour
             File.WriteAllBytes(path, bytes);
             Debug.Log("took screenshot");
         }
+    }
+
+    private void ResetSim()
+    {
+        positions = new Vector2[numParticles];
+        
+        for (var i = 0; i < positions.Length; i++)
+        {
+            var randX = Random.Range(-8f, 8f);
+            var randY = Random.Range(-8f, 8f);
+            positions[i] = new Vector2(randX, randY);
+        }
+        
+        positionsBuffer.SetData(positions);
+        computeShader.SetBuffer(mainId, "positions", positionsBuffer);
+        computeShader.SetBuffer(renderId, "positions", positionsBuffer);
+        
+        computeShader.Dispatch(clearTextureId, renderTexture.width / 32 + 1, renderTexture.height / 8 + 1, 1);
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)

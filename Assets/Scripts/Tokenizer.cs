@@ -6,19 +6,10 @@ public class Tokenizer
 {
     private readonly string line;
     private int cursorIndex = 0;
-    private Token.Type previousTokenType;
-
-    private enum StringTokenType
-    {
-        MultiCharacterOperator,
-        NumericalOperand,
-        VariableOperand
-    }
 
     public Tokenizer(string line)
     {
         this.line = line;
-        previousTokenType = Token.Type.Undefined;
     }
 
     private bool HasNextToken()
@@ -29,114 +20,134 @@ public class Tokenizer
     public List<Token> GetTokens()
     {
         var tokens = new List<Token>();
-        var parenthesisCount = 0;
         while (HasNextToken())
         {
-            var token = GetNextToken();
-            if (token == null) continue;
-            if (token.TokenType == Token.Type.Parenthesis)
+            tokens.Add(GetNextToken());
+        }
+        
+        // combine individual string and number literals into a single token
+        var index = 0;
+        var tokenString = "";
+        var tokenQueue = new Queue<Token>();
+        var previousTokenType = Token.TokenType.Bad;
+        
+        while (index < tokens.Count)
+        {
+            var token = tokens[index];
+
+            if (token.Type != previousTokenType) // a change in token type means we reached the end of consecutive tokens
             {
-                if (token.TokenValue == "(")
-                    parenthesisCount++;
-                else if (token.TokenValue == ")") 
-                    parenthesisCount--;
+                if (tokenQueue.Count > 0)
+                {
+                    while (tokenQueue.Count > 0) // dequeue values and create new combined token
+                    {
+                        tokenString += tokenQueue.Dequeue().Value;
+                    }
+                    tokens.Insert(index, new Token(tokenString, previousTokenType));
+                    tokenString = "";
+                }
             }
 
-            if (parenthesisCount < 0)
+            if (token.Type != Token.TokenType.StringLiteral
+                && token.Type != Token.TokenType.NumberLiteral) // ignore non string and number tokens
             {
-                throw new InvalidExpressionException($"Mismatched close parenthesis at char {cursorIndex}");
+                index++;
+                previousTokenType = token.Type;
+                continue;
             }
-
-            tokens.Add(token);
+            
+            // only string and number tokens
+            tokens.RemoveAt(index);
+            tokenQueue.Enqueue(token);
+            previousTokenType = token.Type;
         }
 
-        if (previousTokenType == Token.Type.UnaryOperator || previousTokenType == Token.Type.BinaryOperator)
+        if (tokenQueue.Count == 0) return tokens;
+        
+        while (tokenQueue.Count > 0)
         {
-            throw new InvalidExpressionException("Expression cannot end with operator");
+            tokenString += tokenQueue.Dequeue().Value;
         }
-
-        if (parenthesisCount > 0)
-        {
-            throw new InvalidExpressionException("Parenthesis mismatch");
-        }
-
+        tokens.Insert(index, new Token(tokenString, previousTokenType));
+        
         return tokens;
     }
 
     private Token GetNextToken()
     {
-        var currentToken = line.Substring(cursorIndex, 1);
-        while (cursorIndex < line.Length - 1 && currentToken[0] == ' ')
-        {
-            currentToken = line.Substring(++cursorIndex, 1);
-        }
-
-        if (currentToken == "(" || currentToken == ")")
+        var currentToken = line.Substring(cursorIndex, 1)[0];
+        var tokenType = Token.TokenType.Bad;
+        while (cursorIndex < line.Length - 1 && currentToken == ' ')
         {
             cursorIndex++;
-            previousTokenType = Token.Type.Parenthesis;
-            return new Token(currentToken, Token.Type.Parenthesis);
+            currentToken = line.Substring(cursorIndex, 1)[0];
         }
-        
-        if (Token.IsBasicOperator(currentToken))
+
+        switch (currentToken)
         {
-            if ((previousTokenType == Token.Type.UnaryOperator || previousTokenType == Token.Type.BinaryOperator|| previousTokenType == Token.Type.Undefined)
-                && currentToken != "-")
-            {
-                throw new InvalidExpressionException($"Unexpected operator '{currentToken}' at char {cursorIndex + 1}");
-            }
-
-            Operator.Operation operationType;
-            var tokenOperatorType = Token.Type.BinaryOperator;
-            switch (currentToken)
-            {
-                case "+":
-                    operationType = Operator.Operation.Addition;
-                    break;
-                case "-":
-                    operationType = previousTokenType == Token.Type.UnaryOperator 
-                                    || previousTokenType == Token.Type.BinaryOperator 
-                                    || previousTokenType == Token.Type.Undefined
-                                    || previousTokenType == Token.Type.Parenthesis
-                        ? Operator.Operation.Negation
-                        : Operator.Operation.Subtraction;
-                    if (operationType == Operator.Operation.Negation) tokenOperatorType = Token.Type.UnaryOperator;
-                    break;
-                case "*":
-                    operationType = Operator.Operation.Multiplication;
-                    break;
-                case "/":
-                    operationType = Operator.Operation.Division;
-                    break;
-                case "^":
-                    operationType = Operator.Operation.Exponentiation;
-                    break;
-                default:
-                    throw new InvalidOperationException($"Undefined operator {currentToken}");
-            }
-
-            cursorIndex++;
-            previousTokenType = tokenOperatorType;
-
-            return new Operator(currentToken, operationType);
+            case '(':
+                cursorIndex++;
+                tokenType = Token.TokenType.OpenParenthesis;
+                break;
+            case ')':
+                cursorIndex++;
+                tokenType = Token.TokenType.CloseParenthesis;
+                break;
+            case '+':
+                cursorIndex++;
+                tokenType = Token.TokenType.Plus;
+                break;
+            case '-':
+                cursorIndex++;
+                tokenType = Token.TokenType.Minus;
+                break;
+            case '*':
+                cursorIndex++;
+                tokenType = Token.TokenType.Asterisk;
+                break;
+            case '/':
+                cursorIndex++;
+                tokenType = Token.TokenType.ForwardSlash;
+                break;
+            case '^':
+                cursorIndex++;
+                tokenType = Token.TokenType.Caret;
+                break;
+            case '=':
+                cursorIndex++;
+                tokenType = Token.TokenType.Equals;
+                break;
+            case '.':
+                cursorIndex++;
+                tokenType = Token.TokenType.Dot;
+                break;
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                cursorIndex++;
+                tokenType = Token.TokenType.NumberLiteral;
+                break;
+            case 'a': case 'b': case 'c': case 'd':
+            case 'e': case 'f': case 'g': case 'h':
+            case 'i': case 'j': case 'k': case 'l':
+            case 'm': case 'n': case 'o': case 'p':
+            case 'q': case 'r': case 's': case 't':
+            case 'u': case 'v': case 'w': case 'x':
+            case 'y': case 'z': case 'A': case 'B':
+            case 'C': case 'D': case 'E': case 'F':
+            case 'G': case 'H': case 'I': case 'J':
+            case 'K': case 'L': case 'M': case 'N':
+            case 'O': case 'P': case 'Q': case 'R':
+            case 'S': case 'T': case 'U': case 'V':
+            case 'W': case 'X': case 'Y': case 'Z':
+                cursorIndex++;
+                tokenType = Token.TokenType.StringLiteral;
+                break;
         }
 
-        var multiCharacterToken = ParseMultiCharacterToken(ref currentToken);
-        if (multiCharacterToken != null)
-        {
-            //cursorIndex++;
-            return multiCharacterToken;
-        }
-
-        if (currentToken.Length == 0 || char.IsWhiteSpace(currentToken[0]))
-        {
-            cursorIndex++;
-            return null;
-        }
-
-        throw new InvalidExpressionException($"Unexpected symbol '{currentToken}' at char {cursorIndex + 1}");
+        return new Token(currentToken, tokenType);
     }
 
+    /*
     private Token ParseMultiCharacterToken(ref string currentToken)
     {
         
@@ -170,14 +181,14 @@ public class Tokenizer
         {
             if (double.TryParse(currentToken, out _))
             {
-                if (previousTokenType == Token.Type.Operand)
+                if (_previousTokenTokenType == Token.Type.Operand)
                 {
                     throw new InvalidExpressionException(
                         $"Unexpected operand '{currentToken}' at char {beginningIdentifierIndex + 1}");
                 }
 
                 cursorIndex++;
-                previousTokenType = Token.Type.Operand;
+                _previousTokenTokenType = Token.Type.Operand;
                 return new Token(currentToken, Token.Type.Operand);
             }
 
@@ -187,14 +198,14 @@ public class Tokenizer
 
         if (stringTokenType == StringTokenType.VariableOperand)
         {
-            if (previousTokenType == Token.Type.Operand)
+            if (_previousTokenTokenType == Token.Type.Operand)
             {
                 throw new InvalidExpressionException(
                     $"Unexpected operand '{currentToken}' at char {beginningIdentifierIndex + 1}");
             }
 
             cursorIndex++;
-            previousTokenType = Token.Type.Operand;
+            _previousTokenTokenType = Token.Type.Operand;
             return new Token(currentToken, Token.Type.Operand);
         }
 
@@ -205,7 +216,7 @@ public class Tokenizer
         }
 
         return null;
-    }
+    }*/
 
     private static bool IsNumerical(string token)
     {

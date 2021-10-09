@@ -23,7 +23,7 @@ public class Operator : Token
 
     public Operation OperationType { get; }
 
-    public Operator(string tokenValue, Operation operation) : base(tokenValue, OperationDimension(operation))
+    public Operator(string value, Operation operation) : base(value, OperationDimension(operation))
     {
         OperationType = operation;
     }
@@ -77,30 +77,31 @@ public class Operator : Token
         //throw new ArgumentException($"{token} is not a valid operator");
         return Operation.Undefined;
     }
-
-    public static Type OperationDimension(Operation operation)
+    
+    public static TokenType OperationDimension(Operation operation)
     {
-        switch (operation)
-        {
-            case Operation.Addition:
-            case Operation.Subtraction:
-            case Operation.Multiplication:
-            case Operation.Division:
-            case Operation.Exponentiation:
-                return Type.BinaryOperator;
-            case Operation.Negation:
-            case Operation.Sine:
-            case Operation.Cosine:
-            case Operation.Tangent:
-            case Operation.Absolute:
-            case Operation.Floor:
-            case Operation.Ceiling:
-            case Operation.SquareRoot:
-            case Operation.CubeRoot:
-                return Type.UnaryOperator;
-        }
-
-        return Type.Undefined;
+        return TokenType.Bad;
+        // switch (operation)
+        // {
+        //     case Operation.Addition:
+        //     case Operation.Subtraction:
+        //     case Operation.Multiplication:
+        //     case Operation.Division:
+        //     case Operation.Exponentiation:
+        //         return System.Type.BinaryOperator;
+        //     case Operation.Negation:
+        //     case Operation.Sine:
+        //     case Operation.Cosine:
+        //     case Operation.Tangent:
+        //     case Operation.Absolute:
+        //     case Operation.Floor:
+        //     case Operation.Ceiling:
+        //     case Operation.SquareRoot:
+        //     case Operation.CubeRoot:
+        //         return System.Type.UnaryOperator;
+        // }
+        //
+        // return System.Type.Undefined;
     }
 
     public override string ToString()

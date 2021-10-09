@@ -724,7 +724,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 985caee7d279759428578c4e4389c461, type: 3}
   m_Name: 
@@ -732,6 +732,10 @@ MonoBehaviour:
   camera: {fileID: 963194227}
   computeShader: {fileID: 7200000, guid: 31d76ba1e2e1d244aa4d58f192c23126, type: 3}
   renderTexture: {fileID: 0}
+  a: 0.91
+  b: -1.3
+  c: -0.96
+  d: -0.28
   dimensions: {x: 1920, y: 1080}
 --- !u!20 &963194227
 Camera:
@@ -809,7 +813,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1435125736
 MonoBehaviour:
   m_ObjectHideFlags: 0

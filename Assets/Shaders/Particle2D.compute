@@ -10,6 +10,8 @@ RWTexture2D<float4> renderTexture;
 RWStructuredBuffer<float2> positions;
 float2 offset;
 
+float4 p;
+
 
 
 [numthreads(128,1,1)]
@@ -18,18 +20,18 @@ void Main (uint3 id : SV_DispatchThreadID)
     float2 pos = positions[id.x];
     float x = pos.x;
     float y = pos.y;
-    float dx = sin(-1.3*y) + -1.9*cos(-1.3*x);
-    float dy = sin(-1.3*x) + -1.8*cos(-1.3*y);
-    positions[id.x] = float2(dx, dy);
+    float dx = sin(p.x*y) + p.z*cos(p.x*x);
+    float dy = sin(p.y*x) + p.w*cos(p.y*y);
+    positions[id.x] += 0.01*float2(dx, dy);
 }
 
 [numthreads(128,1,1)]
 void Render (uint3 id : SV_DispatchThreadID)
 {
-    const float2 pos = positions[id.x] * 170 + offset;
+    const float2 pos = positions[id.x] * 130 + offset;
     if (pos.x >= 0 && pos.y >= 0)
     {
-        renderTexture[pos] += float4(0.05, 0.01*pos.x/500, 0.03*pos.y/500, 0);
+        renderTexture[pos] += 8*float4(0.05, 0.01*pos.x/500, 0.03*pos.y/500, 0);
     }
 }
 

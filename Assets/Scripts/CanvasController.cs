@@ -29,7 +29,8 @@ public class CanvasController : MonoBehaviour
         var tokens = new List<Token>();
         try
         {
-            tokens = Parser.ConvertInfixToPostfix(tokenizer.GetTokens());
+            tokens = tokenizer.GetTokens();
+            //tokens = Parser.ConvertInfixToPostfix(tokenizer.GetTokens());
             //var evaluated = Parser.EvaluatePostfixExpression(tokens).ToString();
             resultText.color = Color.white;
             //resultText.text = evaluated;

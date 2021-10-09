@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 public class Parser
 {
+    /*
     public static List<Token> ConvertInfixToPostfix(List<Token> tokens)
     {
         var postfixTokens = new List<Token>();
@@ -11,18 +12,18 @@ public class Parser
         for (var index = 0; index < tokens.Count; index++)
         {
             var currentToken = tokens[index];
-            if (currentToken.TokenType == Token.Type.Operand)
+            if (currentToken.Type == Token.Type.Operand)
             {
                 postfixTokens.Add(currentToken);
                 continue;
             }
 
-            if (currentToken.TokenType == Token.Type.UnaryOperator || currentToken.TokenType == Token.Type.BinaryOperator)
+            if (currentToken.Type == Token.Type.UnaryOperator || currentToken.Type == Token.Type.BinaryOperator)
             {
                 var currentOperator = (Operator) currentToken;
                 var currentOperatorPriority = currentOperator.Priority();
                 while (operatorStack.Count > 0 &&
-                       operatorStack.Peek().TokenType != Token.Type.Parenthesis &&
+                       operatorStack.Peek().Type != Token.Type.Parenthesis &&
                        ((Operator) operatorStack.Peek()).Priority() >= currentOperatorPriority
                 )
                 {
@@ -32,12 +33,12 @@ public class Parser
                 operatorStack.Push(currentOperator);
             }
 
-            if (currentToken.TokenType == Token.Type.Parenthesis)
+            if (currentToken.Type == Token.Type.Parenthesis)
             {
-                if (currentToken.TokenValue == "(") operatorStack.Push(currentToken);
-                if (currentToken.TokenValue == ")")
+                if (currentToken.Value == "(") operatorStack.Push(currentToken);
+                if (currentToken.Value == ")")
                 {
-                    while (operatorStack.Count > 0 && operatorStack.Peek().TokenValue != "(")
+                    while (operatorStack.Count > 0 && operatorStack.Peek().Value != "(")
                     {
                         postfixTokens.Add(operatorStack.Pop());
                     }
@@ -50,7 +51,7 @@ public class Parser
         while (operatorStack.Count > 0)
         {
             var operatorToken = operatorStack.Pop();
-            if (operatorToken.TokenType != Token.Type.Parenthesis) postfixTokens.Add(operatorToken);
+            if (operatorToken.Type != Token.Type.Parenthesis) postfixTokens.Add(operatorToken);
         }
 
         return postfixTokens;
@@ -62,7 +63,7 @@ public class Parser
         for (var index = 0; index < tokens.Count; index++)
         {
             var currentToken = tokens[index];
-            if (currentToken.TokenType == Token.Type.Operand)
+            if (currentToken.Type == Token.Type.Operand)
             {
                 tokenStack.Push(currentToken);
                 continue;
@@ -71,13 +72,13 @@ public class Parser
             var tokenOperator = (Operator) currentToken;
             if (tokenOperator.OperationType == Operator.Operation.Negation)
             {
-                var tokenValue = double.Parse(tokenStack.Pop().TokenValue);
+                var tokenValue = double.Parse(tokenStack.Pop().Value);
                 tokenStack.Push(new Token((-tokenValue).ToString(), Token.Type.Operand));
                 continue;
             }
 
-            var b = double.Parse(tokenStack.Pop().TokenValue);
-            var a = double.Parse(tokenStack.Pop().TokenValue);
+            var b = double.Parse(tokenStack.Pop().Value);
+            var a = double.Parse(tokenStack.Pop().Value);
             double result = 0;
             if (tokenOperator.OperationType == Operator.Operation.Addition)
                 result = a + b;
@@ -93,6 +94,6 @@ public class Parser
             tokenStack.Push(new Token(result.ToString(), Token.Type.Operand));
         }
 
-        return double.Parse(tokenStack.Pop().TokenValue);
-    }
+        return double.Parse(tokenStack.Pop().Value);
+    }*/
 }
