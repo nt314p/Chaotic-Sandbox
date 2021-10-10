@@ -30,14 +30,15 @@ public class CanvasController : MonoBehaviour
         try
         {
             tokens = tokenizer.GetTokens();
+            var equationTokens = Parser.ConvertToEquationTokens(tokens);
             //tokens = Parser.ConvertInfixToPostfix(tokenizer.GetTokens());
             //var evaluated = Parser.EvaluatePostfixExpression(tokens).ToString();
             resultText.color = Color.white;
             //resultText.text = evaluated;
-            string output = "";
-            for (var index = 0; index < tokens.Count; index++)
+            var output = "";
+            for (var index = 0; index < equationTokens.Count; index++)
             {
-                output += tokens[index] + "\n";
+                output += equationTokens[index] + "\n";
             }
 
             resultText.text = output;

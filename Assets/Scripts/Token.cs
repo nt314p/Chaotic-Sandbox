@@ -20,9 +20,7 @@
         StringLiteral, // variables and multi character operators like sin, abs, ceil
         NumberLiteral
     }
-
-    //private static string[] basicOperators = {"+","-","*","/","^"};
-
+    
     public string Value { get; }
     public TokenType Type { get; }
 
@@ -37,21 +35,6 @@
         Value = tokenValue.ToString();
         Type = type;
     }
-
-    // public static bool IsBasicOperator(string token)
-    // {
-    //     for (var index = 0; index < basicOperators.Length; index++)
-    //     {
-    //         if (basicOperators[index] == token) return true;
-    //     }
-    //
-    //     return false;
-    // }
-
-    // public static bool IsMultiCharOperator(string token)
-    // {
-    //     return Operator.StringToOperation(token) != Operator.Operation.Undefined;
-    // }
 
     public override string ToString()
     {

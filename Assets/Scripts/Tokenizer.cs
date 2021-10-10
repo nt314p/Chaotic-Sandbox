@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 
 public class Tokenizer
@@ -28,7 +27,6 @@ public class Tokenizer
         // combine individual string and number literals into a single token
         var index = 0;
         var tokenString = "";
-        var tokenQueue = new Queue<Token>();
         var previousTokenType = Token.TokenType.Bad;
         
         while (index < tokens.Count)
@@ -37,19 +35,15 @@ public class Tokenizer
 
             if (token.Type != previousTokenType) // a change in token type means we reached the end of consecutive tokens
             {
-                if (tokenQueue.Count > 0)
+                if (tokenString.Length > 0)
                 {
-                    while (tokenQueue.Count > 0) // dequeue values and create new combined token
-                    {
-                        tokenString += tokenQueue.Dequeue().Value;
-                    }
                     tokens.Insert(index, new Token(tokenString, previousTokenType));
                     tokenString = "";
                 }
             }
 
-            if (token.Type != Token.TokenType.StringLiteral
-                && token.Type != Token.TokenType.NumberLiteral) // ignore non string and number tokens
+            if (token.Type != Token.TokenType.StringLiteral && 
+                token.Type != Token.TokenType.NumberLiteral) // ignore non string and number tokens
             {
                 index++;
                 previousTokenType = token.Type;
@@ -58,17 +52,14 @@ public class Tokenizer
             
             // only string and number tokens
             tokens.RemoveAt(index);
-            tokenQueue.Enqueue(token);
+            tokenString += token.Value;
             previousTokenType = token.Type;
         }
 
-        if (tokenQueue.Count == 0) return tokens;
-        
-        while (tokenQueue.Count > 0)
+        if (tokenString.Length > 0)
         {
-            tokenString += tokenQueue.Dequeue().Value;
+            tokens.Insert(index, new Token(tokenString, previousTokenType));
         }
-        tokens.Insert(index, new Token(tokenString, previousTokenType));
         
         return tokens;
     }
