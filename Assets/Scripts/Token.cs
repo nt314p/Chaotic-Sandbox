@@ -3,6 +3,7 @@
     public enum TokenType
     {
         Bad,
+        Whitespace,
         
         // Basic operators, + - * / ^
         Plus,
@@ -15,9 +16,8 @@
         CloseParenthesis,
         
         Equals,
-        Dot,
         
-        StringLiteral, // variables and multi character operators like sin, abs, ceil
+        Identifier, // variables and multi character operators like sin, abs, ceil
         NumberLiteral
     }
     

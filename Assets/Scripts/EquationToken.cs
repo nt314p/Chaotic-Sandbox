@@ -3,6 +3,7 @@
     public enum TokenType
     {
         Bad,
+        Whitespace,
         
         VariableOperand,
         NumericalOperand,

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using TMPro;
 using UnityEngine;
 
@@ -8,30 +7,17 @@ public class CanvasController : MonoBehaviour
 
     [SerializeField] private TMP_InputField userInput;
     [SerializeField] private TMP_Text resultText;
-
-    // Start is called before the first frame update
-    private void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    private void Update()
-    {
-        
-    }
-
+    
     public void Evaluate()
     {
         var text = userInput.text;
         if (text.Length == 0) return;
         var tokenizer = new Tokenizer(userInput.text);
-        var tokens = new List<Token>();
         try
         {
-            tokens = tokenizer.GetTokens();
+            var tokens = tokenizer.GetTokens();
             var equationTokens = Parser.ConvertToEquationTokens(tokens);
-            //tokens = Parser.ConvertInfixToPostfix(tokenizer.GetTokens());
+            equationTokens = Parser.ConvertInfixToPostfix(equationTokens);
             //var evaluated = Parser.EvaluatePostfixExpression(tokens).ToString();
             resultText.color = Color.white;
             //resultText.text = evaluated;
