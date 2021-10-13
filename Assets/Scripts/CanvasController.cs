@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using TMPro;
 using UnityEngine;
 
@@ -7,7 +8,12 @@ public class CanvasController : MonoBehaviour
 
     [SerializeField] private TMP_InputField userInput;
     [SerializeField] private TMP_Text resultText;
-    
+
+    private void Awake()
+    {
+        Application.targetFrameRate = 60;
+    }
+
     public void Evaluate()
     {
         var text = userInput.text;
@@ -18,16 +24,16 @@ public class CanvasController : MonoBehaviour
             var tokens = tokenizer.GetTokens();
             var equationTokens = Parser.ConvertToEquationTokens(tokens);
             equationTokens = Parser.ConvertInfixToPostfix(equationTokens);
-            //var evaluated = Parser.EvaluatePostfixExpression(tokens).ToString();
+            var evaluated = Parser.EvaluatePostfixExpression(equationTokens).ToString();
             resultText.color = Color.white;
-            //resultText.text = evaluated;
+            resultText.text = evaluated;
             var output = "";
             for (var index = 0; index < equationTokens.Count; index++)
             {
                 output += equationTokens[index] + "\n";
             }
 
-            resultText.text = output;
+            //resultText.text = output;
         }
         catch (InvalidExpressionException e)
         {
