@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 
 public static class Parser
@@ -23,7 +22,6 @@ public static class Parser
                 case TokenType.Bad:
                     throw new InvalidExpressionException($"Bad token '{token.Value}'");
                 case TokenType.Whitespace:
-                    //previousEquationTokenType = EquationTokenType.Whitespace;
                     index++;
                     continue;
                 case TokenType.Identifier:
@@ -95,7 +93,7 @@ public static class Parser
 
             if (parenthesisCount < 0) throw new InvalidExpressionException("Unmatched close parenthesis");
 
-            var equationToken = equationTokenType.IsOperand()
+            var equationToken = equationTokenType == EquationTokenType.NumericalOperand
                 ? new EquationToken(double.Parse(token.Value), equationTokenType)
                 : new EquationToken(token.Value, equationTokenType);
             
@@ -116,6 +114,10 @@ public static class Parser
             {
                 throw new InvalidExpressionException("Left hand side of assignment must be a single variable");
             }
+        }
+        else
+        {
+            throw new InvalidExpressionException("Expression must contain equal sign");
         }
         
         return equationTokens;

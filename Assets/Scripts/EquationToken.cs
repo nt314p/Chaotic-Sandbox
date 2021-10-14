@@ -4,7 +4,6 @@ public class EquationToken
 {
     public EquationTokenType Type { get; }
     public string Value { get; }
-
     private double numericalValue;
     public double NumericalValue
     {

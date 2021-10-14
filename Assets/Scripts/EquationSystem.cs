@@ -1,14 +1,68 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using UnityEngine;
 
 public class EquationSystem
 {
     private Dictionary<string, double> variableDictionary;
-    private List<List<EquationToken>> equations;
-    
-    public EquationSystem(List<List<EquationToken>> equations)
+    private List<Equation> equations;
+    private Dictionary<Equation, HashSet<string>> equationDependencies;
+
+    public EquationSystem(List<Equation> equations)
     {
         this.equations = equations;
+        equationDependencies = new Dictionary<Equation, HashSet<string>>();
+        variableDictionary = new Dictionary<string, double>();
+
+        foreach (var equation in equations)
+        {
+            variableDictionary.Add(equation.LeftHandVariable, double.NaN);
+            equationDependencies.Add(equation, new HashSet<string>(equation.RightHandVariables));
+        }
+
+        foreach (var equation in equations)
+        {
+            var rightHandVariables = equation.RightHandVariables;
+            foreach (var variable in rightHandVariables)
+            {
+                if (!variableDictionary.ContainsKey(variable))
+                    throw new InvalidExpressionException($"Undefined variable '{variable}'");
+            }
+        }
+    }
+
+    public Dictionary<string, double> EvaluateSystem()
+    {
+        var index = 0;
+        while (index < equationDependencies.Count)
+        {
+            var equation = equationDependencies.Keys.ToList()[index];
+            if (equationDependencies[equation].Count != 0)
+            {
+                index++;
+                continue;
+            }
+
+            var equationTokens = equation.GetEquationTokens();
+            equationTokens.RemoveRange(0, 2); // remove variable and equal sign
+            var result = EvaluatePostfixExpression(Parser.ConvertInfixToPostfix(equationTokens));
+            variableDictionary[equation.LeftHandVariable] = result; 
+            equationDependencies.Remove(equation);
+            index = 0;
+                
+            foreach (var equationDep in equationDependencies.Keys)
+            {
+                // remove variable from dependencies as it has been evaluated
+                equationDependencies[equationDep].Remove(equation.LeftHandVariable);
+            }
+        }
+        
+        if (equationDependencies.Count > 0)
+            throw new InvalidExpressionException("System contains circular variable references");
+
+        return variableDictionary;
     }
     
     private double EvaluatePostfixExpression(List<EquationToken> equationTokens)
@@ -22,9 +76,8 @@ public class EquationSystem
             {
                 if (currentTokenType == EquationTokenType.VariableOperand)
                 {
+                    tokenStack.Push(new EquationToken(variableDictionary[currentToken.Value], EquationTokenType.NumericalOperand));
                     continue;
-                    //throw new InvalidExpressionException("Variable operands not yet supported");
-                    // TODO: evaluate variable value (possibly recursively calling equation eval)
                 }
                 tokenStack.Push(currentToken);
                 continue;
