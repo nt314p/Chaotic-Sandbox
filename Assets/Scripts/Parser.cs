@@ -2,80 +2,82 @@
 using System.Collections.Generic;
 using System.Data;
 
-public class Parser
+public static class Parser
 {
     public static List<EquationToken> ConvertToEquationTokens(List<Token> tokens)
     {
         var equationTokens = new List<EquationToken>();
-        var previousEquationTokenType = EquationToken.TokenType.Bad;
+        var previousEquationTokenType = EquationTokenType.Bad;
         var index = 0;
         var parenthesisCount = 0;
+        var containsEqualOperator = false;
 
         while (index < tokens.Count)
         {
             var token = tokens[index];
             var tokenType = token.Type;
             
-            var equationTokenType = EquationToken.TokenType.Bad;
+            var equationTokenType = EquationTokenType.Bad;
             switch (tokenType)
             {
-                case Token.TokenType.Bad:
+                case TokenType.Bad:
                     throw new InvalidExpressionException($"Bad token '{token.Value}'");
-                case Token.TokenType.Whitespace:
-                    //previousEquationTokenType = EquationToken.TokenType.Whitespace;
+                case TokenType.Whitespace:
+                    //previousEquationTokenType = EquationTokenType.Whitespace;
                     index++;
                     continue;
-                case Token.TokenType.Identifier:
+                case TokenType.Identifier:
                     equationTokenType = ConvertIdentifierToEquationToken(token.Value);
                     break;
-                case Token.TokenType.OpenParenthesis:
-                    equationTokenType = EquationToken.TokenType.OpenParenthesis;
+                case TokenType.OpenParenthesis:
+                    equationTokenType = EquationTokenType.OpenParenthesis;
                     parenthesisCount++;
                     break;
-                case Token.TokenType.CloseParenthesis:
-                    if (previousEquationTokenType == EquationToken.TokenType.OpenParenthesis)
+                case TokenType.CloseParenthesis:
+                    if (previousEquationTokenType == EquationTokenType.OpenParenthesis)
                     {
                         throw new InvalidExpressionException("Cannot have empty parenthesis");
                     }
 
-                    if (IsOperator(previousEquationTokenType))
+                    if (previousEquationTokenType.IsOperator())
                     {
                         var previousOperator = equationTokens[equationTokens.Count - 1];
                         throw new InvalidExpressionException(
                             $"Operator '{previousOperator.Value}' is missing an operand");
                     }
-                    equationTokenType = EquationToken.TokenType.CloseParenthesis;
+                    equationTokenType = EquationTokenType.CloseParenthesis;
                     parenthesisCount--;
                     break;
-                case Token.TokenType.Plus:
-                    equationTokenType = EquationToken.TokenType.AdditionOperator;
+                case TokenType.Plus:
+                    equationTokenType = EquationTokenType.AdditionOperator;
                     break;
-                case Token.TokenType.Minus:
-                    equationTokenType = !IsOperand(previousEquationTokenType)
-                        ? EquationToken.TokenType.NegationOperator
-                        : EquationToken.TokenType.SubtractionOperator;
+                case TokenType.Minus:
+                    equationTokenType = !previousEquationTokenType.IsOperand()
+                        ? EquationTokenType.NegationOperator
+                        : EquationTokenType.SubtractionOperator;
                     break;
-                case Token.TokenType.Asterisk:
-                    equationTokenType = EquationToken.TokenType.MultiplicationOperator;
+                case TokenType.Asterisk:
+                    equationTokenType = EquationTokenType.MultiplicationOperator;
                     break;
-                case Token.TokenType.ForwardSlash:
-                    equationTokenType = EquationToken.TokenType.DivisionOperator;
+                case TokenType.ForwardSlash:
+                    equationTokenType = EquationTokenType.DivisionOperator;
                     break;
-                case Token.TokenType.Caret:
-                    equationTokenType = EquationToken.TokenType.ExponentiationOperator;
+                case TokenType.Caret:
+                    equationTokenType = EquationTokenType.ExponentiationOperator;
                     break;
-                case Token.TokenType.Equals:
-                    equationTokenType = EquationToken.TokenType.EqualsOperator;
+                case TokenType.Equals:
+                    containsEqualOperator = true;
+                    equationTokenType = EquationTokenType.EqualsOperator;
                     break;
-                case Token.TokenType.NumberLiteral:
+                case TokenType.NumberLiteral:
                     ParseNumericalOperand(token);
-                    equationTokenType = EquationToken.TokenType.NumericalOperand;
+                    equationTokenType = EquationTokenType.NumericalOperand;
                     break;
             }
 
             if (HasImpliedMultiply(previousEquationTokenType, equationTokenType))
             {
-                equationTokens.Add(new EquationToken("*", EquationToken.TokenType.MultiplicationOperator));
+                equationTokens.Add(new EquationToken("*", EquationTokenType.MultiplicationOperator));
             }
             
             /* u: unary operator, b: binary operator
@@ -84,25 +86,38 @@ public class Parser
              * bb: + /     :(
              * bu: +sin    :)
              */
-            if (IsOperator(previousEquationTokenType) &&
-                IsOperator(equationTokenType) &&
-                IsBinaryOperator(equationTokenType))
+            if (previousEquationTokenType.IsOperator() &&
+                equationTokenType.IsOperator() &&
+                equationTokenType.IsBinaryOperator())
             {
                 throw new InvalidExpressionException($"Expected operand but got operator '{token.Value}'");
             }
 
             if (parenthesisCount < 0) throw new InvalidExpressionException("Unmatched close parenthesis");
 
-            equationTokens.Add(new EquationToken(token.Value, equationTokenType));
+            var equationToken = equationTokenType.IsOperand()
+                ? new EquationToken(double.Parse(token.Value), equationTokenType)
+                : new EquationToken(token.Value, equationTokenType);
+            
+            equationTokens.Add(equationToken);
             previousEquationTokenType = equationTokenType;
             index++;
         }
 
-        if (IsOperator(previousEquationTokenType))
+        if (previousEquationTokenType.IsOperator())
             throw new InvalidExpressionException("Expression cannot end with operator");
 
         if (parenthesisCount != 0) throw new InvalidExpressionException("Unmatched open parenthesis");
 
+        if (containsEqualOperator)
+        {
+            if (equationTokens[0].Type != EquationTokenType.VariableOperand ||
+                equationTokens[1].Type != EquationTokenType.EqualsOperator)
+            {
+                throw new InvalidExpressionException("Left hand side of assignment must be a single variable");
+            }
+        }
+        
         return equationTokens;
     }
     
@@ -116,18 +131,18 @@ public class Parser
             var currentToken = tokens[index];
             var currentTokenType = currentToken.Type;
             
-            if (IsOperand(currentTokenType))
+            if (currentTokenType.IsOperand())
             {
                 postfixTokens.Add(currentToken);
                 continue;
             }
 
-            if (IsOperator(currentTokenType))
+            if (currentTokenType.IsOperator())
             {
-                var currentOperatorPriority = OperatorPriority(currentTokenType);
+                var currentOperatorPriority = currentTokenType.OperatorPriority();
                 while (operatorStack.Count > 0 &&
-                       !IsParenthesis(operatorStack.Peek().Type) &&
-                       OperatorPriority(operatorStack.Peek().Type) > currentOperatorPriority
+                       !operatorStack.Peek().Type.IsParenthesis() &&
+                       operatorStack.Peek().Type.OperatorPriority() > currentOperatorPriority
                 )
                 {
                     postfixTokens.Add(operatorStack.Pop());
@@ -138,10 +153,10 @@ public class Parser
             
             switch (currentTokenType)
             {
-                case EquationToken.TokenType.OpenParenthesis:
+                case EquationTokenType.OpenParenthesis:
                     operatorStack.Push(currentToken);
                     break;
-                case EquationToken.TokenType.CloseParenthesis:
+                case EquationTokenType.CloseParenthesis:
                 {
                     while (operatorStack.Count > 0 && operatorStack.Peek().Value != "(")
                     {
@@ -157,119 +172,34 @@ public class Parser
         while (operatorStack.Count > 0)
         {
             var operatorToken = operatorStack.Pop();
-            if (!IsParenthesis(operatorToken.Type)) postfixTokens.Add(operatorToken);
+            if (!operatorToken.Type.IsParenthesis()) postfixTokens.Add(operatorToken);
         }
 
         return postfixTokens;
     }
-    
-    
-    public static double EvaluatePostfixExpression(List<EquationToken> equationTokens)
-    {
-        var tokenStack = new Stack<EquationToken>();
-        for (var index = 0; index < equationTokens.Count; index++)
-        {
-            var currentToken = equationTokens[index];
-            var currentTokenType = currentToken.Type;
-            if (IsOperand(currentTokenType))
-            {
-                if (currentTokenType == EquationToken.TokenType.VariableOperand)
-                {
-                    throw new InvalidExpressionException("Variable operands not yet supported");
-                    // TODO: evaluate variable value
-                }
-                tokenStack.Push(currentToken);
-                continue;
-            }
 
-            if (IsUnaryOperator(currentTokenType))
-            {
-                var n = double.Parse(tokenStack.Pop().Value);
-                switch (currentTokenType)
-                { 
-                    case EquationToken.TokenType.NegationOperator:
-                        n = -n;
-                        break;
-                    case EquationToken.TokenType.SineOperator:
-                        n = Math.Sin(n);
-                        break;
-                    case EquationToken.TokenType.CosineOperator:
-                        n = Math.Cos(n);
-                        break;
-                    case EquationToken.TokenType.TangentOperator:
-                        n = Math.Tan(n);
-                        break;
-                    case EquationToken.TokenType.AbsoluteOperator:
-                        n = Math.Abs(n);
-                        break;
-                    case EquationToken.TokenType.FloorOperator:
-                        n = Math.Floor(n);
-                        break;
-                    case EquationToken.TokenType.CeilingOperator:
-                        n = Math.Ceiling(n);
-                        break;
-                    case EquationToken.TokenType.SquareRootOperator:
-                        n = Math.Sqrt(n);
-                        break;
-                    case EquationToken.TokenType.CubeRootOperator:
-                        n = Math.Pow(n, 1.0 / 3.0);
-                        break;
-                }
-                tokenStack.Push(new EquationToken(n.ToString(), EquationToken.TokenType.NumericalOperand));
-                continue;
-            }
-
-            var b = double.Parse(tokenStack.Pop().Value);
-            var a = double.Parse(tokenStack.Pop().Value);
-            double result = 0;
-
-            switch (currentTokenType)
-            {
-                case EquationToken.TokenType.AdditionOperator:
-                    result = a + b;
-                    break;
-                case EquationToken.TokenType.SubtractionOperator:
-                    result = a - b;
-                    break;
-                case EquationToken.TokenType.MultiplicationOperator:
-                    result = a * b;
-                    break;
-                case EquationToken.TokenType.DivisionOperator:
-                    result = a / b;
-                    break;
-                case EquationToken.TokenType.ExponentiationOperator:
-                    result = Math.Pow(a, b);
-                    break;
-            }
-
-            tokenStack.Push(new EquationToken(result.ToString(), EquationToken.TokenType.NumericalOperand));
-        }
-
-        return double.Parse(tokenStack.Pop().Value);
-    }
-
-    private static EquationToken.TokenType ConvertIdentifierToEquationToken(string token)
+    private static EquationTokenType ConvertIdentifierToEquationToken(string token)
     {
         switch (token)
         {
             case "sin":
-                return EquationToken.TokenType.SineOperator;
+                return EquationTokenType.SineOperator;
             case "cos":
-                return EquationToken.TokenType.CosineOperator;
+                return EquationTokenType.CosineOperator;
             case "tan":
-                return EquationToken.TokenType.TangentOperator;
+                return EquationTokenType.TangentOperator;
             case "abs":
-                return EquationToken.TokenType.AbsoluteOperator;
+                return EquationTokenType.AbsoluteOperator;
             case "floor":
-                return EquationToken.TokenType.FloorOperator;
+                return EquationTokenType.FloorOperator;
             case "ceil":
-                return EquationToken.TokenType.CeilingOperator;
+                return EquationTokenType.CeilingOperator;
             case "sqrt":
-                return EquationToken.TokenType.SquareRootOperator;
+                return EquationTokenType.SquareRootOperator;
             case "cbrt":
-                return EquationToken.TokenType.CubeRootOperator;
+                return EquationTokenType.CubeRootOperator;
             default:
-                return EquationToken.TokenType.VariableOperand;
+                return EquationTokenType.VariableOperand;
         }
     }
 
@@ -290,108 +220,40 @@ public class Parser
      * 
      * v( = v*(
      */
-    private static bool HasImpliedMultiply(EquationToken.TokenType previousTokenType,
-        EquationToken.TokenType currentTokenType)
+    private static bool HasImpliedMultiply(EquationTokenType previousTokenType,
+        EquationTokenType currentTokenType)
     {
         // previous token must be ), n, v
-        if (previousTokenType != EquationToken.TokenType.CloseParenthesis &&
-            previousTokenType != EquationToken.TokenType.NumericalOperand &&
-            previousTokenType != EquationToken.TokenType.VariableOperand) return false;
+        if (previousTokenType != EquationTokenType.CloseParenthesis &&
+            previousTokenType != EquationTokenType.NumericalOperand &&
+            previousTokenType != EquationTokenType.VariableOperand) return false;
         
         // current token must be v, u, (, n
-        if (currentTokenType != EquationToken.TokenType.VariableOperand &&
-            !(IsUnaryOperator(currentTokenType) && currentTokenType != EquationToken.TokenType.NegationOperator) &&
-            currentTokenType != EquationToken.TokenType.OpenParenthesis &&
-            currentTokenType != EquationToken.TokenType.NumericalOperand) return false;
+        if (currentTokenType != EquationTokenType.VariableOperand &&
+            !(currentTokenType.IsUnaryOperator() && currentTokenType != EquationTokenType.NegationOperator) &&
+            currentTokenType != EquationTokenType.OpenParenthesis &&
+            currentTokenType != EquationTokenType.NumericalOperand) return false;
         
         switch (previousTokenType)
         {
-            case EquationToken.TokenType.CloseParenthesis:
+            case EquationTokenType.CloseParenthesis:
                 return true;
-            case EquationToken.TokenType.NumericalOperand:
-                return currentTokenType != EquationToken.TokenType.NumericalOperand;
-            case EquationToken.TokenType.VariableOperand:
-                return currentTokenType == EquationToken.TokenType.OpenParenthesis;
+            case EquationTokenType.NumericalOperand:
+                return currentTokenType != EquationTokenType.NumericalOperand;
+            case EquationTokenType.VariableOperand:
+                return currentTokenType == EquationTokenType.OpenParenthesis;
         }
 
         return false;
-    }
-
-    private static bool IsOperand(EquationToken.TokenType tokenType)
-    {
-        return tokenType == EquationToken.TokenType.NumericalOperand ||
-               tokenType == EquationToken.TokenType.VariableOperand;
-    }
-
-    private static bool IsUnaryOperator(EquationToken.TokenType tokenType)
-    {
-        return tokenType == EquationToken.TokenType.NegationOperator ||
-               tokenType == EquationToken.TokenType.SineOperator ||
-               tokenType == EquationToken.TokenType.CosineOperator ||
-               tokenType == EquationToken.TokenType.TangentOperator ||
-               tokenType == EquationToken.TokenType.AbsoluteOperator ||
-               tokenType == EquationToken.TokenType.FloorOperator ||
-               tokenType == EquationToken.TokenType.CeilingOperator ||
-               tokenType == EquationToken.TokenType.SquareRootOperator ||
-               tokenType == EquationToken.TokenType.CubeRootOperator;
-    }
-    
-    private static bool IsBinaryOperator(EquationToken.TokenType tokenType)
-    {
-        return tokenType == EquationToken.TokenType.AdditionOperator ||
-               tokenType == EquationToken.TokenType.SubtractionOperator ||
-               tokenType == EquationToken.TokenType.MultiplicationOperator ||
-               tokenType == EquationToken.TokenType.DivisionOperator ||
-               tokenType == EquationToken.TokenType.ExponentiationOperator ||
-               tokenType == EquationToken.TokenType.EqualsOperator;
-    }
-
-    private static bool IsOperator(EquationToken.TokenType tokenType)
-    {
-        return IsUnaryOperator(tokenType) || IsBinaryOperator(tokenType);
-    }
-
-    private static bool IsParenthesis(EquationToken.TokenType tokenType)
-    {
-        return tokenType == EquationToken.TokenType.OpenParenthesis ||
-               tokenType == EquationToken.TokenType.CloseParenthesis;
-    }
-
-    private static int OperatorPriority(EquationToken.TokenType tokenType)
-    {
-        switch (tokenType)
-        {
-            case EquationToken.TokenType.AdditionOperator:
-            case EquationToken.TokenType.SubtractionOperator:
-                return 1;
-            case EquationToken.TokenType.MultiplicationOperator:
-            case EquationToken.TokenType.DivisionOperator:
-                return 2;
-            case EquationToken.TokenType.ExponentiationOperator:
-                return 3;
-            case EquationToken.TokenType.NegationOperator:
-                return 4;
-            case EquationToken.TokenType.SineOperator:
-            case EquationToken.TokenType.CosineOperator:
-            case EquationToken.TokenType.TangentOperator:
-            case EquationToken.TokenType.AbsoluteOperator:
-            case EquationToken.TokenType.FloorOperator:
-            case EquationToken.TokenType.CeilingOperator:
-            case EquationToken.TokenType.SquareRootOperator:
-            case EquationToken.TokenType.CubeRootOperator:
-                return 4;
-            default:
-                return -1;
-        }
     }
 
     private static void ParseNumericalOperand(Token token)
     {
         var decimalCount = 0;
         var tokenValue = token.Value;
-        for (var i = 0; i < tokenValue.Length; i++)
+        foreach (var c in tokenValue)
         {
-            if (tokenValue[i] != '.') continue;
+            if (c != '.') continue;
             decimalCount++;
             if (decimalCount >= 2)
             {

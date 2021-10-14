@@ -33,41 +33,41 @@ public class Tokenizer
     {
         stringBuilder.Clear();
         var currentToken = line[cursorIndex];
-        Token.TokenType tokenType;
+        TokenType tokenType;
 
         switch (currentToken)
         {
             case '(':
                 cursorIndex++;
-                tokenType = Token.TokenType.OpenParenthesis;
+                tokenType = TokenType.OpenParenthesis;
                 break;
             case ')':
                 cursorIndex++;
-                tokenType = Token.TokenType.CloseParenthesis;
+                tokenType = TokenType.CloseParenthesis;
                 break;
             case '+':
                 cursorIndex++;
-                tokenType = Token.TokenType.Plus;
+                tokenType = TokenType.Plus;
                 break;
             case '-':
                 cursorIndex++;
-                tokenType = Token.TokenType.Minus;
+                tokenType = TokenType.Minus;
                 break;
             case '*':
                 cursorIndex++;
-                tokenType = Token.TokenType.Asterisk;
+                tokenType = TokenType.Asterisk;
                 break;
             case '/':
                 cursorIndex++;
-                tokenType = Token.TokenType.ForwardSlash;
+                tokenType = TokenType.ForwardSlash;
                 break;
             case '^':
                 cursorIndex++;
-                tokenType = Token.TokenType.Caret;
+                tokenType = TokenType.Caret;
                 break;
             case '=':
                 cursorIndex++;
-                tokenType = Token.TokenType.Equals;
+                tokenType = TokenType.Equals;
                 break;
             case '.':
             case '0': case '1': case '2': case '3': case '4':
@@ -78,7 +78,7 @@ public class Tokenizer
                     cursorIndex++;
                 }
 
-                tokenType = Token.TokenType.NumberLiteral; 
+                tokenType = TokenType.NumberLiteral; 
                 break;
             case 'a': case 'b': case 'c': case 'd':
             case 'e': case 'f': case 'g': case 'h':
@@ -99,16 +99,16 @@ public class Tokenizer
                     cursorIndex++;
                 }
 
-                tokenType = Token.TokenType.Identifier;
+                tokenType = TokenType.Identifier;
                 break;
             case ' ':
             case '\t':
                 cursorIndex++;
-                tokenType = Token.TokenType.Whitespace;
+                tokenType = TokenType.Whitespace;
                 break;
             default:
                 cursorIndex++;
-                tokenType = Token.TokenType.Bad;
+                tokenType = TokenType.Bad;
                 break;
         }
 
@@ -116,7 +116,7 @@ public class Tokenizer
         
         return new Token(finalToken, tokenType);
     }
-
+    
     private static bool IsNumerical(char token)
     {
         return char.IsDigit(token) || token == '.';

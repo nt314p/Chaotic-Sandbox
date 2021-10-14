@@ -24,16 +24,17 @@ public class CanvasController : MonoBehaviour
             var tokens = tokenizer.GetTokens();
             var equationTokens = Parser.ConvertToEquationTokens(tokens);
             equationTokens = Parser.ConvertInfixToPostfix(equationTokens);
-            var evaluated = Parser.EvaluatePostfixExpression(equationTokens).ToString();
+            //var evaluated = Parser.EvaluatePostfixExpression(equationTokens).ToString();
             resultText.color = Color.white;
-            resultText.text = evaluated;
+            
             var output = "";
             for (var index = 0; index < equationTokens.Count; index++)
             {
                 output += equationTokens[index] + "\n";
             }
 
-            //resultText.text = output;
+            //resultText.text = evaluated;
+            resultText.text = output;
         }
         catch (InvalidExpressionException e)
         {
