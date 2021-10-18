@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using UnityEngine;
 
 public class EquationSystem
 {
@@ -45,7 +44,7 @@ public class EquationSystem
                 continue;
             }
 
-            var equationTokens = equation.GetEquationTokens();
+            var equationTokens = equation.EquationTokens;
             equationTokens.RemoveRange(0, 2); // remove variable and equal sign
             var result = EvaluatePostfixExpression(Parser.ConvertInfixToPostfix(equationTokens));
             variableDictionary[equation.LeftHandVariable] = result; 

@@ -2,13 +2,13 @@
 
 public class Equation
 {
-    private List<EquationToken> equationTokens;
+    public List<EquationToken> EquationTokens { get; }
     public string LeftHandVariable { get; }
     public List<string> RightHandVariables { get; }
 
     public Equation(List<EquationToken> equationTokens)
     {
-        this.equationTokens = equationTokens;
+        EquationTokens = equationTokens;
         RightHandVariables = new List<string>();
 
         if (equationTokens[0].Type == EquationTokenType.VariableOperand)
@@ -26,8 +26,14 @@ public class Equation
         }
     }
 
-    public List<EquationToken> GetEquationTokens()
+    public string ToCodeString()
     {
-        return equationTokens;
+        var code = "";
+        foreach (var token in EquationTokens)
+        {
+            code += token.Type == EquationTokenType.NumericalOperand ? token.NumericalValue.ToString() : token.Value;
+        }
+
+        return code;
     }
 }

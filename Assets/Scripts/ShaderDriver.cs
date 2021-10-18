@@ -1,11 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
+using UnityEditor;
 using UnityEngine;
 
 public class ShaderDriver : MonoBehaviour
 {
-
     [SerializeField] private Camera camera;
     [SerializeField] private ComputeShader computeShader;
     [SerializeField] private RenderTexture renderTexture;
@@ -23,10 +24,22 @@ public class ShaderDriver : MonoBehaviour
     private int renderId;
     private int clearTextureId;
     private int fadeTextureId;
+
+    private void CreateComputeShader()
+    {
+        var lines = File.ReadAllLines(@"Assets\Shaders\Test.txt");
+        File.WriteAllLines(@"Assets\Shaders\T.compute", lines);
+    }
     
     // Start is called before the first frame update
     private void Awake()
     {
+        CreateComputeShader();
+
+        
+        //AssetDatabase.CreateAsset(, @"Assets/Shaders/created_asset.compute");
+        computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Shaders/Particle2D.compute");
+        Debug.Log(Marshal.SizeOf(computeShader));
         //dimensions = new Vector2Int(Screen.width, Screen.height);
 
         Application.targetFrameRate = 60;

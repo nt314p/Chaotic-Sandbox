@@ -1,4 +1,4 @@
-﻿// Each #kernel tells which function to compile; you can have many kernels
+// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel Main
 #pragma kernel Render
 #pragma kernel ClearTexture
